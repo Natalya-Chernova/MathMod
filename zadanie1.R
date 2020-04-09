@@ -54,6 +54,7 @@ simferopol_id=simferopol_around[["SIMFEROPOL"]][["id"]]
 print(i)
 print(simferopol_id)
 all_i = meteo_tidy_ghcnd(stationid = simferopol_id[i], var="TAVG", date_min = "2009-01-01", date_max = "2016-12-31")
+all_i = all_i[,c("id", "date", "tmax", "tmin")]
 all_simferopol_meteodata=rbind(all_simferopol_meteodata, all_i)
 }
 # Записываем все результаты
