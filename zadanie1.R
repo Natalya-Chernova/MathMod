@@ -3,6 +3,8 @@
 #для региона 82 рассчитать урожайность пшеницы в период с 2009 по 2016 год
 #взяв для рассчета средние суммы активных температур за эти годы, 
 #с 18 ближайших метеостанций
+
+rm(list=ls())
 library(tidyverse)
 library(rnoaa)
 # Скачаем данные с метеостанций и сохраним результат
@@ -38,7 +40,7 @@ all_simferopol_data = meteo_tidy_ghcnd(stationid = simferopol_id)
 
 summary(simferopol_id)
 
-#сюда мы будем загружать данные с метеостанции
+# промежуточный объект, куда мы будем загружать данные с метеостанции
 
 all_i=data.frame()
 
@@ -54,13 +56,61 @@ simferopol_id=simferopol_around[["SIMFEROPOL"]][["id"]]
 print(i)
 print(simferopol_id)
 all_i = meteo_tidy_ghcnd(stationid = simferopol_id[i], var="TAVG", date_min = "2009-01-01", date_max = "2016-12-31")
-all_i = all_i[,c("id", "date", "tmax", "tmin")]
+all_i  =  all_i [, c ( " id " , " date " , " tavg "  )]
 all_simferopol_meteodata=rbind(all_simferopol_meteodata, all_i)
 }
 # Записываем все результаты
-write.csv(all_simferopol_meteodata, "all_simeropol_meteodata.csv")
+write.csv(all_simferopol_meteodata, "all_simferopol_meteodata.csv")
+# посмотрим таблички
 view(all_simferopol_data)
 view(all_simferopol_meteodata)
+str(all_simferopol_meteodata)
+# добавим колонку со средней температурой
+all_simferopol_meteodata = mutate(all_simferopol_data, 
+                               tavg = (all_simferopol_data$tmax + all_simferopol_data$tmin)/2)
+#посмотрим табличку ещё раз
+view(all_simferopol_meteodata)
+#и сохраним её, чтобы не потерять :)
+write.csv(all_simferopol_meteodata, "all_simferopol_meteodata.csv")
+# а теперь откроем
+all_simferopol_meteodata=read.csv("all_simferopol_meteodata.csv")
+# и посмотрим
+str(all_simferopol_meteodata)
+library(lubridate)
+# а теперь добавим день, месяц, год
+all_simferopol_meteodata = mutate(all_simferopol_meteodata, year = year(date), 
+                               month = month(date), day = day(date))
+
+# и посмотрим, что получилось
+str(all_simferopol_meteodata)
+#отфильтруем данные за 2009-2016 года
+years_simferopol_meteodata =filter(all_simferopol_meteodata, year %in% c(2009:2016))
+#проверим результат
+str(years_simferopol_meteodata)
+summary(years_simferopol_meteodata)
+# Разделим температуру на 10, чтобы привести в нормальный вид
+years_simferopol_meteodata[,"tavg"] = years_simferopol_meteodata$tavg/10
+summary (years_simferopol_meteodata)
+# Превратим в нули все NA и где tavg<5 
+years_simferopol_meteodata[is.na(years_simferopol_meteodata$tavg),"tavg"] = 0
+years_simferopol_meteodata[years_simferopol_meteodata$tavg<5, "tavg"] = 0
+#проверяем
+summary(years_simferopol_meteodata)
+# группируем по метеостанциям, годам и месяцам
+alldays = group_by(years_simferopol_meteodata,id,year,month)
+#просуммируем температуру по этим группам
+sumT_alldays_simferopol = summarize(alldays, tsum = sum(tavg))
+sumT_alldays_simferopol
+# максимальная температура за месяц = 859
+859/31
+# то есть, средняя дневная температура равна 27,7, что вполне адекватно
+summary(sumT_alldays_simferopol) 
+# Сгруппируем данные по месяцам  
+groups_simferopol_months = group_by(sumT_alldays_simferopol,month)
+groups_simferopol_months
+# найдем для всех метеостанций и всех лет среднее значение температуры по месяцам
+sumT_months = summarize(groups_simferopol_months, St = mean(tsum))
+sumT_months
 
 #Зададим все необходимые для расчёта переменные
 y=1
@@ -72,5 +122,12 @@ Qj=1600
 Lj=2.2
 Ej=25
 i={1;2;3;4;5;6;7;8;9;10;11;12}
-St>5
-
+# Рассчитаем Fi по месяцам
+sumT_months = mutate(sumT_months, Fi = afi+bfi*y*St)
+#Рассчитаем Yi
+sumT_months = mutate(sumT_months, Yi = ((Fi*di)*Kf)/(Qj*Lj*(100 - Ej)))
+##  Расчитываем урожай 
+Yield = sum(sumT_months$Yi);  
+Yield
+# Полученное значение - 17,66532 ц/га. Средняя урожайность пшеницы в Крыму - 17,2 ц/га.
+# И да прибудет с нами Лиссоз!=)
