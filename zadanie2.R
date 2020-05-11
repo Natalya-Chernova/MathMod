@@ -91,7 +91,7 @@ anova(mod1)
 plot(mod1)
 # Ура-ура, мы получили кучу графиков!
 
-# А теперь создадим вторую модель, "выкинув как можно больше переменных, которые не вносят почти ничего в качество итоговой модели
+# А теперь создадим вторую модель, "выкинув как можно больше переменных, которые не вносят почти ничего в качество итоговой модели"
 formula2 = h2o_flux ~ (DOY+file_records+Tau+qc_Tau+rand_err_Tau+H+qc_H+rand_err_H+LE+qc_LE+rand_err_LE+co2_flux+qc_co2_flux+rand_err_co2_flux+rand_err_h2o_flux+`co2_v-adv`+`h2o_v-adv`+co2_mole_fraction+co2_mixing_ratio+h2o_molar_density+h2o_mole_fraction+h2o_mixing_ratio+h2o_time_lag+sonic_temperature+air_temperature+air_pressure+air_density+air_heat_capacity+air_molar_volume+water_vapor_density+e+es+specific_humidity+RH+VPD+Tdew+u_unrot+v_unrot+ w_unrot+u_rot +v_rot +w_rot +max_speed+wind_dir+yaw+pitch                  +TKE +L +bowen_ratio +`T*` + x_peak +x_offset +`x_10%`+`x_30%`+`x_50%`+`x_70%`+`x_90%`+un_Tau+Tau_scf+un_H+H_scf+un_LE+LE_scf+un_co2_flux+un_h2o_flux+w_spikes                  +ts_var+h2o_var+`w/ts_cov`+co2)
 mod2 = lm(formula2, data = Teaching_tbl)
 # а теперь узнаем то, что хотим знать о второй модели
